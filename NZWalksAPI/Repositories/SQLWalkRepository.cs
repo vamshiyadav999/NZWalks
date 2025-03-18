@@ -1,4 +1,5 @@
-﻿using NZWalksAPI.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using NZWalksAPI.Data;
 using NZWalksAPI.Models.Domain;
 
 namespace NZWalksAPI.Repositories
@@ -13,9 +14,41 @@ namespace NZWalksAPI.Repositories
         }
         public async Task<Walk> CreateAsync(Walk walk)
         {
-          dbContext.Walks.AddAsync(walk);
-          dbContext.SaveChangesAsync();
+          await dbContext.AddAsync(walk);
+          await dbContext.SaveChangesAsync();
           return walk;
+        }
+        public async Task<List<Walk>> GetAllAsync()
+        {
+            return await dbContext.Walks.Include("Difficulty").Include("Region").ToListAsync();
+        }
+
+        public async Task<Walk> GetByIDAsync(Guid id)
+        {
+            return await dbContext.Walks.Include("Difficulty").Include("Region").FirstAsync(x => x.Id == id);
+        }
+
+        public async Task<Walk> UpdateAsync(Guid id, Walk walk)
+        {
+            var existingWalk = await dbContext.Walks.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existingWalk == null)
+            {
+                return null;
+            }
+            else
+            {
+                existingWalk.Name = walk.Name;
+                existingWalk.Description = walk.Description;
+                existingWalk.RegionID = walk.RegionID;
+                existingWalk.DifficultyID = walk.DifficultyID;
+                existingWalk.WalkImageUrl = walk.WalkImageUrl;
+
+                await dbContext.SaveChangesAsync();
+
+                return existingWalk;
+
+            }
         }
     }
 }
